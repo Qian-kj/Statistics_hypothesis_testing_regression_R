@@ -1,0 +1,562 @@
+---
+title: "Coursework"
+output: pdf_document
+author: "kejiang"
+---
+## Question 1
+### Import data
+The dataset contains consumption of different categories of food from several European countries in the 1980s.
+```{r setup, include = FALSE}
+rm(list = ls())
+library(knitr)
+library(ggplot2)
+library(cowplot)
+library(lmtest)
+```
+
+```{r importdata, results='hide'}
+setwd('Coursework')
+Protein_dat<-read.csv('protein.csv',header = TRUE)
+Prdata<-head(Protein_dat)
+kable(Prdata)
+attach(Protein_dat)
+```
+
+### (a) summary statistics
+(1)Level of the data  
+It is continuous data, so its location includes arithmetic mean, median, quantiles(25th percentile and 75th percentile, 1st Qu and 3rd Qu for short), minimum and maximum, which are shown as follows:
+```{r summary_all}
+summ<-summary(Protein_dat[2:9])
+kable(summ)
+```
+(2)Spread of the data  
+Spread of data contains its standard deviation, IQR(Interquartile range), variance and range:
+
+```{r spread, results = 'hide'}
+var<-c('RedMeat','WhiteMeat','Eggs','Milk','Fish','Cereals','Starch','Nuts','Fr.Veg')
+for (i in var) {
+  a <- sd(Protein_dat[[i]])
+  b <- IQR(Protein_dat[[i]])
+  c <- max(Protein_dat[[i]])
+  d <- min(Protein_dat[[i]])
+  e <- var(Protein_dat[[i]])
+  cat(i,': standard deviation=',a,'IQR=',b,'variance=',e,'range=',c-d,'\n')
+}
+```
+| Categories | Standard deviation | IQR | Variance | Range |
+| :----: | :----: | :----: | :----: | :----: |
+| RedMeat | 3.35 | 2.80 | 11.20 | 13.60 |
+| WhiteMeat | 3.69  | 5.90 |  13.65 | 12.60 |
+| Eggs | 1.12 | 1.00 | 1.25 | 4.20 |
+| Milk |  7.11  | 12.20 |  50.49 | 28.80 |
+| Fish |  3.40 | 3.70 | 11.58 | 14.00 |
+| Cereals | 10.97 | 15.80 | 120.45 | 38.10 |
+| Starch |  1.63  | 2.60 |  2.67 | 5.90 |
+| Nuts |  1.99  | 3.20 |  3.94 | 7.10 |
+| Fruit&Vegetable | 1.80 | 2.00 | 3.25 | 6.50 |
+
+### (b)Plot the data in different graphs
+The level and spread of the data can be illustrated by graphs, such as, boxplot and histogram, and scatter diagram is always used to show its location.  
+(1)Boxplot  
+Boxplot contains the median, 25th percentile (Q1), 75th percentile (Q3), upper and lower limits of the box and outliers.  
+Using the boxplot to compare each variables, Cereals tends to have the highest median and spread out most widely from it, while the medians of eggs and nuts seem to be the smallest and data of eggs is not dispersed relatively.  
+```{r boxplot}
+boxplot(Protein_dat[,2:10])
+```
+In addition, there are some outliers in RedMeat, Eggs and Fish which are as follows:
+
+i.Outliers of the RedMeat  
+It consumption in France and UK are the largest, at 18.0 and 17.4, respectively.
+```{r Outlier_rm}
+#Outliers of RedMeat
+outliers = boxplot(Protein_dat$RedMeat, plot=FALSE)$out
+ctr_rm<-Protein_dat[Protein_dat$RedMeat %in% outliers,]
+kable(ctr_rm)
+```
+
+ii.Outliers of the Eggs  
+Albania, Portugal and Yugoslavia may have the smallest figures for eggs, at 0.5, 1.1 and 1.2, respectively.
+```{r Outlier_eg}
+#Outliers of Eggs
+outliers = boxplot(Protein_dat$Eggs, plot=FALSE)$out
+ctr_eg<-Protein_dat[Protein_dat$Eggs %in% outliers,]
+kable(ctr_eg)
+```
+
+iii.Outliers of the Fish  
+The greatest consumption of the fish is 14.2 in Portugal.
+```{r Outlier_fs}
+#Outliers of Fish
+outliers = boxplot(Protein_dat$Fish, plot=FALSE)$out
+ctr_fs<-Protein_dat[Protein_dat$Fish %in% outliers,]
+kable(ctr_fs)
+```
+  
+(2)Histograms  
+The maximums and minimums of each variables can be found obviously in histograms and it also shows their ranges.
+```{r histograms}
+opar<-par(no.readonly=T)
+par(mfrow=c(3,3)) # set more than one plot per figure
+for (i in 2:10){
+  hist(Protein_dat[,i],main ="",xlab=names(Protein_dat)[i],probability = TRUE)
+}
+par(opar)
+```
+
+(3)Scatter diagrams  
+The level of data can be expressed in scatter diagrams as well.
+```{r sc_dm}
+plot(Protein_dat[2:10], main="Scatter diagrams for Protein")
+```
+
+### (c)Association of the Fr.Vb and the others
+Using covariance to identify independence and relationship between two variables, and then calculating correlation coefficient to quantify their linear relationship.
+```{r association, results = 'hide'}
+var<-c('RedMeat','WhiteMeat','Eggs','Milk','Fish','Cereals','Starch','Nuts')
+for (i in var) {
+  #covariance
+  a <- cov(Fr.Veg,Protein_dat[[i]])
+  #correlation coefficient
+  b <- cor(Fr.Veg,Protein_dat[[i]])
+  cat(i,': covariance=',a,'correlation=',b,'\n')
+}
+```
+| Categories | covariance | correlation |
+| :----: | :----: | :----: |
+| RedMeat | -0.45 | -0.07 |
+| WhiteMeat | -0.41 | -0.06 |
+| Eggs | -0.09 | -0.05 |
+| Milk |  -5.23  | -0.41 |
+| Fish |  1.63 | 0.27 |
+| Cereals | 0.92 | 0.05 |
+| Starch |  0.25  | 0.08 |
+| Nuts |  1.34  | 0.37 |
+As shown in above chart, milk, Red meat, White meat and eggs are correlated negatively to fruit and vegetables, while there are positive relationship to fish, nuts, cereals and starch. In addition, the consumption of eggs tends to have nearly no relationship to that of fruit and vegetables. However, there are not strong linear relationship even for the consumption of milk and nuts according to the correlation coefficients.
+
+### (d)Plot association of the Fr.Vb and the others  
+Scatter diagrams can be applied to illustrate briefly their association as mentioned above.
+```{r plt_assoc}
+par(mfrow = c(2,2))
+var<-c('RedMeat','WhiteMeat','Eggs','Milk','Fish','Cereals','Starch','Nuts')
+for (i in var) {
+  plot(Fr.Veg,Protein_dat[[i]],pch=19,cex.axis=1.5,cex.axis=1.5,ylab = i, 
+       main = paste('Fruit&Vegetables versus',i))
+}
+```
+These charts show that other variables are less linearly related to the consumption of fruit and vegetables, which may be due to the limited data.
+
+### (e)Confidence intervals
+To calculate their confidence intervals, their distributions and variances need to be considered.  
+Firstly, Q-Q plot is applied to show their distribution. As shown in the chart, they may normally distribute, because most of data are fitted with the line. But there are some outliers, may be due to the limited data.
+```{r norm_dist}
+var<-c('RedMeat','WhiteMeat','Eggs','Milk','Fish','Cereals','Starch','Nuts','Fr.Veg')
+par(mfrow = c(3,3))
+for (i in var) {
+  shapiro.test(Protein_dat[[i]])
+  {qqnorm(Protein_dat[[i]], main =paste("Q-Q plot for",i))
+  qqline(Protein_dat[[i]])}
+}
+```
+Their variances and means are known, so their confidence intervals are calculated as follows:
+
+```{r CI, results='hide'}
+#sample number
+n<-nrow(Protein_dat)
+for (i in var) {
+  #Lower confidence interval
+  CI_low<-mean(Protein_dat[[i]])-qt(0.975,n-1)*sd(Protein_dat[[i]])/sqrt(n)
+  #Upper confidence interval
+  CI_up<-mean(Protein_dat[[i]])+qt(0.975,n-1)*sd(Protein_dat[[i]])/sqrt(n)
+  cat('95% confidence interval for',i,'is','[',CI_low,',',CI_up,']\n')
+}
+```
+
+| Categories | confidence interval |
+| :----: | :----: | :----: |
+| RedMeat | [8.44, 11.21] |
+| WhiteMeat | [6.37, 9.42] |
+| Eggs | [2.47, 3.40] |
+| Milk | [14.18, 20.04] |
+| Fish | [2.88, 5.69] |
+| Cereals | [27.72, 36.78] |
+| Starch | [3.60, 4.95] |
+| Nuts | [2.25, 3.89] |
+| Fruit&Vegatable | [3.39, 4.88] |
+
+### (f) Appropriate test of hypothesis
+The two sample t-test is always used to compare unknown means of two populations, and there are its assumptions:  
+i Two populations are normally distributed;  
+ii The two random samples are independent of each other;  
+iii Assumption variance homogeneity.  
+As stated in section(e), the Q-Q plots show that they are normal distribution. so their independence and variance homogeneity need to be tested, respectively.  
+
+(1) Independence test  
+The Chi-square test can test the null hypothesis of independence of two random variables and null hypothesis is whether there are no differences between them. If the result is true, the test statistic follows a Chi-square frequency distribution. In addition, this distribution only occur when they are independent and normal distribution.  
+There are Chi-square tests for testing the null hypothesis of independence of a pair of random variables based on observations of the pairs.  
+```{r Chi-square test, results='hide', warning=FALSE}
+chisq.test(Starch,Nuts)
+```
+
+The p value is 0.298, which is larger than 5%, so the null hypothesis cannot be rejected and they are independent and normally distributed.  
+
+(2)Variance test  
+The F test can test the equality of two population's variances. Its null hypothesis is that true ratio of variances is equal to one.  
+
+```{r F test,results='hide'}
+#F-test
+ftest<-var.test(Starch, Nuts, ratio = 1,
+         alternative = c("two.sided"),
+         conf.level = 0.95)
+```
+
+P-value is 0.3463, which is greater that 5%, so the hypothesis is true and there are no variance heterogeneity.  
+
+(3)T test  
+Then two variables can be put into the t test:  
+```{r t-test, results='hide'}
+t.test(Starch,Nuts,paired = FALSE,alternative = 'greater')
+
+```
+The result illustrates that the mean of starch consumption is 4.276, which is larger than that of nuts consumption(3.072). So the assumption is reasonable, due to the test of the distribution, indepence and variance heterogeneity for the two populations.
+
+## Question 2
+
+```{r setup_2, include = FALSE}
+rm(list = ls())
+library(do)
+library(MASS)
+library(leaps)
+library(knitr)
+library(ggplot2)
+library(lmtest)
+library(car)
+```
+
+### Import data
+The dataset contains 91 Archaic dart points recovered during surface surveys at Fort Hood, Texas.
+```{r Setup2, results='hide'}
+dat<-read.csv('DartPoints.csv',header = TRUE)
+head(dat)
+#Omit NAN
+dp_dat<-na.omit(dat)
+attach(dp_dat)
+```
+
+### (a) Scaling variables
+The scaling of each variables are as shown in this table:  
+
+| Variables | Scaling |
+| :----: | :----: |
+| Dart point type | Nominal |
+| Maximum Length | Continuous |
+| Maximum Width | Continuous |
+| Maximum Thickness | Continuous |
+| Basal Width | Continuous |
+| Juncture Width | Continuous |
+| Haft element Length | Continuous |
+| Weight | Continuous |
+| Blade shape | Nominal |
+| Base shape | Nominal |
+| Should shape | Nominal |
+| Should orientation | Nominal |
+| Shape lateral haft element | Nominal |
+| Orientation lateral haft element | Nominal |
+
+### (b)Relationship between Length and the other vaiables by graphies
+To represent the relation between Length and the other variables, there are categorical and numerical variables which need to be considered.  
+(1)Graphs for Numerical variables  
+In following graphs, there may be linear relationship with Length. Width and Weight tends to be significantly linearly related to Length, whose points are fitted as a line closely, while Juncture Width and may have relatively low linear relationship, which disperses more widely. In addition, it is clear to find the outliers in each graph.
+```{r rtp_nu}
+par(mfrow = c(2,3))
+var<-c('Width','Thickness','B.Width','J.Width','H.Length','Weight')
+for (i in var) {
+  m<-lm(dat[[i]]~dat[['Length']])
+  {plot(dat[['Length']],dat[[i]],pch=19,cex.axis=1.5,cex.axis=1.5,xlab = 'Length',
+        ylab = i, main = paste(i,'versus Length')) 
+  abline(m)}
+}
+```
+
+(2)Graphs for categorical variables  
+As shown in graph: Name vs Length, the Dart point type seems to related to the Length. In specific, the Pedemales may have the longest length, while the Darl may have the shortest length, but its correlation need to be tested.
+```{r rtp_cat_nm}
+par(mfrow = c(2,2))
+#Name vs Length
+p1<-qplot(Name,Length, data=dat,main = 'Name vs Length')
+p1
+```
+
+Except for variable 'Name', there are unbalanced proportion in the other variables according to these scatter diagrams. So these variables cannot be considered to calculate the association strength with the Length.
+
+```{r rtp_cat_other}
+#Blade.Sh vs Length
+p2<-qplot(Blade.Sh,Length, data=dat, main = 'Blade.Sh vs Length')
+#Base.Sh vs Length
+p3<-qplot(Base.Sh,Length, data=dat,main = 'Base.Sh vs Length')
+#Should.Sh vs Length
+p4<-qplot(Should.Sh,Length, data=dat,main = 'Should.Sh vs Length')
+#Should.Or vs Length
+p5<-qplot(Should.Or,Length, data=dat,main = 'Should.Or vs Length')
+#Haft.Sh vs Length
+p6<-qplot(Haft.Sh,Length, data=dat,main = 'Haft.Sh vs Length')
+#Haft.Or vs Length
+p7<-qplot(Haft.Or,Length, data=dat,main = 'Haft.Or vs Length')
+p8 <- cowplot::plot_grid(p2, p3, p4, p5, p6, p7, nrow = 2)
+p8
+```
+
+### (c) Association with Length
+(1)Numerical variables  
+As shown in the following chart, correlation coefficients of each variable are positive and large, except for Basal Width which has lower negative linear relationship with Length. Weight is the most important covariable for Length.
+```{r coe_num, results='hide'}
+#correlation matrix
+cor(dp_dat[,3:9])
+```
+| Variables | Correlation coefficient |
+| :----: | :----: |
+| Maximum Width | 0.78 |
+| Maximum Thickness | 0.59 |
+| Basal Width | -0.28 |
+| Juncture Width | 0.50 |
+| Haft element Length | 0.55 |
+| Weight | 0.88 |
+
+(2)categorical variables  
+The ANOVA test (Analysis of Variance test) is applied to test the association strength between a continuous variable and a nominal variable, which are independent of each other.  
+A one way ANOVA is used to compare two means from two independent (unrelated) groups using the F-distribution. The null hypothesis for the test is that the two means are equal. 
+Firstly, using chi-square to test if they are independent. 
+```{r csq_2, results='hide',warning=FALSE}
+chisq.test(Name,Length)
+```
+P-value is 0.288, which is greater than 5%, so they are independent. Then, they can be put into the ANOVA test and its p-value is significantly less than 5%. Therefore, there are correlation between the Name and the Length.
+
+```{r coe_cat,results='hide'}
+nl<-data.frame(Name,Length)
+a<-aov(Length~Name, data=nl)
+summary(a)
+```
+
+
+### (d) Relative frequency distribution of Weight
+At first, weight need to be labeled based on different ranges. Five numbers can be calculated to split the data into four ranges: minimun-lower hinge(2.30-4.55), lower hinge-median(4.55-6.80), median-upper hinge(6.80-10.05), upper hinge-maximum(10.05-28.80), which are as shown in the following chart.  
+
+|Ranges | Labels |
+| :----: | :----: |
+| 2.30-4.55 | Light |
+| 4.55-6.80 | Normal |
+| 6.80-10.05 | Medium |
+| 10.05-28.80 | Heavy |
+
+```{r labeling}
+#Five numbers for levels splitting: minimum, lower-hinge, median, upper-hinge, maximum
+break1<-fivenum(dat[['Weight']])
+
+ #labeling
+labels = c('Light','Normal','Medium','Heavy')
+#Split into four levels: 
+#minimum-lower-hinge, (lower-hinge)-median, median-(upper-hinge),(upper-hinge)- maximum.
+Weight2<-cut(dp_dat[['Weight']],break1,labels,ordered_result = TRUE) #
+
+#Spare DataFrame and replace Weight
+Wgt<-Weight2
+Wgt_Blsh = data.frame(Wgt,Blade.Sh)
+
+#Omit NAN
+Wgt_Blsh<-na.omit(Wgt_Blsh)
+```
+
+This chart represents the relative distribution of Weight based on various types of blade shape, which are shown in graphs as well.  
+
+|Blade shape | Light | Normal | Medium | Heavy |
+| :----: | :----: | :----: |:----: | :----: |
+| Straight | 0.26 | 0.48 | 0.15 | 0.11 |
+| Excurvate | 0.19 | 0.14 | 0.25 | 0.42 |
+| Incurvate | 1 | 0 | 0 | 0 |
+| Recurate | 0 | 0 | 1 | 0 | 
+
+```{r fre_dis}
+#Plotting
+par (mfrow = c(2,2))
+#Blade.shape = S
+barplot(table(Wgt_Blsh[['Blade.Sh']],Wgt_Blsh[['Wgt']])[4,]/length(which(
+  Wgt_Blsh[['Blade.Sh']]=='S')),main = 'Blade.shape = S',xlab = 'Weight',
+  ylab='Relative frequency')
+#Blade.shape = E
+barplot(table(Wgt_Blsh[['Blade.Sh']],Wgt_Blsh[['Wgt']])[1,]/length(which(
+  Wgt_Blsh[['Blade.Sh']]=='E')),main = 'Blade.shape = E',xlab = 'Weight',
+  ylab='Relative frequency')
+#Blade.shape = I
+barplot(table(Wgt_Blsh[['Blade.Sh']],Wgt_Blsh[['Wgt']])[2,]/length(which(
+  Wgt_Blsh[['Blade.Sh']]=='I')), main = 'Blade.shape = I',xlab = 'Weight',
+  ylab='Relative frequency')
+#Blade.shape = R
+barplot(table(Wgt_Blsh[['Blade.Sh']],Wgt_Blsh[['Wgt']])[3,]/length(which(
+  Wgt_Blsh[['Blade.Sh']]=='R')), main = 'Blade.shape = R',xlab = 'Weight',
+  ylab='Relative frequency')
+```
+
+### (e) Multiple regression model
+To build multiple regression model, the variables need to be selected at first. Based on the forward variable selection, the best multiple regression model can be created according to the smallest AIC(Akaike information criterion) and then the remaining variables can be decided manually. 
+
+(1)Forward variable selection
+```{r Variable selection, results=FALSE}
+#Forward variable selection
+lm.wgt=lm(Weight~Length,data = dp_dat)
+stepAIC(lm.wgt, direction = 'forward',
+        scope = list(lower = lm.wgt, upper = ~Length+Width+factor(Name)+J.Width+H.Length +
+              Thickness + B.Width +	factor(Blade.Sh)	+ factor(Base.Sh) +	factor(Should.Sh) 
+              +factor(Should.Or) + factor(Haft.Sh) +	factor(Haft.Or)))
+
+#After forward
+lm.wgt2=lm(Weight ~ Length + Width + factor(Blade.Sh) + factor(Should.Sh) + 
+    factor(Should.Or),data = dp_dat)
+```
+Based on the forward regression, the model with lowest AIC are obtained and seems to be the best fit model. However, it is important to consider the data in each category. As stated above, these variables which have the unbalanced ratio of different categories need to not be selected, because they cannot reflect the linear relationship.
+```{r category}
+#Blade.Sh ranks
+t1<-table(dp_dat$Blade.Sh)
+kable(t1)
+#Should.Sh
+t2<-table(dp_dat$Should.Sh)
+kable(t2)
+#Should.Or
+t3<-table(dp_dat$Should.Or)
+kable(t3)
+```
+
+(2)The fit model  
+The results show that there are not balanced ranks in Blade Shape, Should Shape and Should Order. So they need to be discarded from this model and the final model is as follows.  
+
+```{r fit model}
+#Fit model
+ft.model = lm(Weight ~ Length + Width, data = dp_dat)
+```
+(3)Test of this model  
+It is crucial to consider the Heteroscedasticity in a Multiple regression model. The ncv test (Non-Constant Error Variance Test) is applied to identify linear model's homoscedasticity. Its null hypothesis is that the errors' variances are not constant. The result shows that there are constant error variances in this model. Therefore, it need to be modified in terms of the data transformation.  
+```{r ncv, results='hide'}
+ncvTest(ft.model) 
+```
+
+(4)Data transformation and final model  
+The multiplicative inverse of each variables can be considered:  
+```{r mi,results='hide'}
+w<-1/(dp_dat$Weight)
+l<-1/(dp_dat$Length)
+wd<-1/(dp_dat$Width)
+
+ft_mi = lm(w ~ l + wd, data = dp_dat)
+```
+The result shows that the null hypothesis cannot be rejected, so the variances are not constant and the final model is obtained.  
+                $$\frac{1}{Weight}=11.50367\frac{1}{Length} + 3.08409\frac{1}{Width}-0.21685$$
+
+```{r ncv_2}
+#ncv test
+ncvTest(ft_mi)
+#final model
+ft_fl = lm(I(1/Weight) ~ I(1/Length) + I(1/Width))
+```
+
+### (f) The fit of the model
+(1)The fit of the model by numerical methods  
+
+i.Summary of the linear model  
+The p values of Intercept, Length and Width are all less than 5%, so they are significantly corvariables. In addition, its adjusted R-squared is around 0.76, which reflects the marked linear relationship. According to the F test, there is a evidence to reject the null hypothesis that p-value less than 5%, which also identify their correlation.
+```{r summu, results='hide', results='hide'}
+summ<-summary(ft_fl)
+summ
+str(summ)
+```
+
+ii.Hypothesis tests  
+Hypothsis tests are used to test whether the $\beta1$ and $\beta2$ are not equal to zero and the results show that they are not zero.
+```{r numerical_methods, results='hide'}
+# Coefficients
+b.est <- ft_fl$coefficients
+
+# Standard deviation of the errors
+sigma.u <- summ$sigma
+
+#Covariates
+x<-cbind(1/dp_dat[['Length']],1/dp_dat[['Width']])
+colnames(x)<-c('1/Length','1/Width')
+
+desx <- cbind(1,x)
+#Standard error
+var.B <- sigma.u^2*solve(t(desx)%*%desx)
+
+# t value: Length
+tval1 <- b.est[2]/sqrt( var.B[2,2] )
+
+tval1
+summ[["coefficients"]][, 3][2]
+
+# Critical values
+datf<-data.frame(cbind(dp_dat[['Weight']],x))
+datf
+n<-nrow(datf)
+p<-ncol(x)
+c(qt(0.025, df = n-2), qt(0.975, df = n - p - 1))
+
+# t value: Width
+tval2 <- b.est[3]/sqrt( var.B[3,3] )
+
+tval2
+summ[["coefficients"]][, 3][3]
+
+# Critical values
+datf<-data.frame(cbind(dp_dat[['Weight']],x))
+datf
+n<-nrow(datf)
+p<-ncol(x)
+c(qt(0.025, df = n-2), qt(0.975, df = n - p - 1))
+```
+
+iii.Confidence intervals  
+This chart shows their confidence intervals:
+```{r C_I}
+result_CI<-confint(ft_fl, level = 0.95)
+kable(result_CI)
+```
+
+iv.Heteroscedasticity  
+As stated above, there is no heteroscedasticity in this model.  
+
+(2)Diagnostic plots  
+According to the first graph: Residuals vs Fitted, although the scale of axis is small, which leads to a curve, the model line is fit nearly horizontally. In normal Q-Q plot, it is normally distributed, except for some outliers.  
+```{r graphical_method}
+par(mfrow = c(2,2))
+#Variables cannot be as denominators
+plot(ft_mi)
+```
+
+### (g) Description of its prediction 
+
+After the test for the fit of this model, the results of tests which are mentioned above prove the fitness of the model with the standard error of 0.047.
+A good fitness ensures the accuracy of the prediction, although it is not enough to certify the accuracy. However, the model may not predict the weight based on new variables whose value are away from the range of these fit variables.   
+
+### (h) Prediction of dart weight
+The two variables: Length = 70mm, Width = 60mm are input into the final model.  
+```{r prediction}
+#New data
+x0 <- c(70,60)
+new.data <- data.frame(Length = x0[1], Width = x0[2])
+
+#Prediction results
+a<-predict.lm(ft_fl, newdata = new.data, interval = "confidence", level=0.95)
+#Confidence interval
+a
+#Result
+1/a
+```
+The result is -897.43, which is unreasonable. However, it identifies that this model cannot be used to predict its weight.
+The reason can be shown in the following figure. The maximum length and maximum width of the new dart point are as outliers in this dataset. Therefore, the prediction result is not available and convincing, unless more data which has close length and width need to be collected and fit as a regression model.
+
+```{r compare}
+#Put new data into the original dataset
+new_dart<-cbind(new.data$Length,new.data$Width)
+new_df<-cbind(dp_dat$Length,dp_dat$Width)
+new_dat<-rbind(new_dart,new_df)
+colnames(new_dat) <-c('Length',"Width")
+#find the outlier
+boxplot(new_dat,main='The boxplot for new dart point')
+```
