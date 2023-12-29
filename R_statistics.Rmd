@@ -1,5 +1,5 @@
 ---
-title: "Coursework"
+title: "Statistics"
 output: pdf_document
 author: "kejiang"
 ---
@@ -15,7 +15,7 @@ library(lmtest)
 ```
 
 ```{r importdata, results='hide'}
-setwd('Coursework')
+setwd('./data')
 Protein_dat<-read.csv('protein.csv',header = TRUE)
 Prdata<-head(Protein_dat)
 kable(Prdata)
