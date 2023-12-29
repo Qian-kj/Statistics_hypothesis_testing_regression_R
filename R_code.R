@@ -7,7 +7,7 @@ library(cowplot)
 library(lmtest)
 
 # Import data
-setwd('C:/Users/qiankj/Desktop/KCL/Statistics/Coursework')
+setwd('./data')
 Protein_dat<-read.csv('protein.csv',header = TRUE)
 Prdata<-head(Protein_dat)
 kable(Prdata)
@@ -54,6 +54,7 @@ kable(ctr_fs)
 
 
 #(2)Histograms  
+
 opar<-par(no.readonly=T)
 par(mfrow=c(3,3)) # set more than one plot per figure
 for (i in 2:10){
